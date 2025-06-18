@@ -1,4 +1,4 @@
 streamlit
 pandas
+spacy
 openpyxl
-spacy>=3.7
