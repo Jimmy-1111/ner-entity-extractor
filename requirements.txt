@@ -3,4 +3,3 @@ pandas
 openpyxl
 spacy
 ginza
-ja-ginza @ https://github.com/megagonlabs/ginza/releases/download/latest/ja_ginza-5.1.0.tar.gz
