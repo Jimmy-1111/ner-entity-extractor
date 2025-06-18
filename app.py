@@ -1,15 +1,16 @@
 import streamlit as st
 import pandas as pd
 import spacy
+import subprocess
 import io
 from zipfile import ZipFile
 
-# 載入 spaCy 的日文模型（需預先安裝 GiNZA）
+# 嘗試載入 GiNZA 模型，若尚未安裝則自動下載
 try:
     nlp = spacy.load("ja_ginza")
-except:
-    st.error("⚠️ 未安裝日文 GiNZA 模型，請執行: !pip install ginza && python -m spacy download ja_ginza")
-    st.stop()
+except OSError:
+    subprocess.run(["python", "-m", "spacy", "download", "ja_ginza"], check=True)
+    nlp = spacy.load("ja_ginza")
 
 def extract_named_entities(text):
     doc = nlp(text)
