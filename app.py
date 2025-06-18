@@ -1,62 +1,40 @@
 import streamlit as st
 import pandas as pd
-import spacy
-import openpyxl
 import io
+from janome.tokenizer import Tokenizer
 
-# 直接 load（不用自動下載）
-nlp = spacy.load("ja_core_news_sm")
+# ==== Stopwords 客製 ====
+STOPWORDS = set([
+    "こと", "ため", "もの", "よう", "ところ", "これ", "それ", "あれ",
+    "の", "に", "は", "が", "を", "と", "で", "も", "へ", "から", "まで",
+    "及び", "より", "として", "について", "など", "における", "により", "一方", "また", "さらに", "なお", "当面", "まず", "次に", "および"
+])
 
-st.title("日文 NER 專有名詞抽取工具")
+# ==== 名詞抽取函數 ====
+janome_tokenizer = Tokenizer()
 
-uploaded_files = st.file_uploader("請上傳 Excel 檔案（可多選）", type=["xlsx"], accept_multiple_files=True)
+def extract_nouns(text):
+    tokens = janome_tokenizer.tokenize(text)
+    nouns = [t.surface for t in tokens if t.part_of_speech.split(',')[0] == "名詞"]
+    nouns = [w for w in nouns if w not in STOPWORDS and len(w) > 1]
+    return nouns
 
-if uploaded_files:
-    column_name = st.text_input("請輸入要分析的欄位名稱（預設：語句內容）", value="語句內容")
+# ==== Streamlit App ====
+st.title("📋 日文每句全名詞抽取工具（已排除 stopwords）")
+uploaded = st.file_uploader("請上傳 Excel（需有『語句內容』欄）", type=["xlsx"])
 
-    if st.button("開始抽取專有名詞"):
-        with st.spinner("分析中..."):
-            output_files = []
-            combined_df = pd.DataFrame()
-
-            for file in uploaded_files:
-                df = pd.read_excel(file)
-                if column_name not in df.columns:
-                    st.warning(f"{file.name} 缺少欄位：{column_name}，已略過")
-                    continue
-
-                # 專有名詞抽取
-                ner_keywords = []
-                for text in df[column_name].astype(str):
-                    doc = nlp(text)
-                    entities = [ent.text for ent in doc.ents if ent.label_ in ["PERSON", "ORG", "GPE", "LOC", "PRODUCT", "EVENT", "WORK_OF_ART"]]
-                    ner_keywords.append("、".join(entities) if entities else "（無）")
-
-                df["NER專有名詞"] = ner_keywords
-
-                # 儲存檔案
-                buffer = io.BytesIO()
-                df.to_excel(buffer, index=False)
-                output_files.append((file.name.replace('.xlsx', '_ner.xlsx'), buffer))
-
-                # 合併用
-                df["_來源檔名"] = file.name
-                combined_df = pd.concat([combined_df, df], ignore_index=True)
-
-            # 合併所有結果
-            merged_buffer = io.BytesIO()
-            combined_df.to_excel(merged_buffer, index=False)
-            merged_buffer.seek(0)
-            output_files.append(("ner_總表合併.xlsx", merged_buffer))
-
-            # 打包ZIP
-            from zipfile import ZipFile
-            zip_buffer = io.BytesIO()
-            with ZipFile(zip_buffer, "w") as zipf:
-                for fname, buf in output_files:
-                    buf.seek(0)
-                    zipf.writestr(fname, buf.read())
-            zip_buffer.seek(0)
-
-        st.success("分析完成 ✅")
-        st.download_button("📥 下載所有結果（ZIP 壓縮包）", zip_buffer, file_name="ner_outputs.zip")
+if uploaded:
+    df = pd.read_excel(uploaded)
+    if "語句內容" not in df.columns:
+        st.error("缺少『語句內容』欄位")
+        st.stop()
+    sentences = df["語句內容"].astype(str).tolist()
+    all_nouns = []
+    for sent in sentences:
+        nouns = extract_nouns(sent)
+        all_nouns.append("、".join(sorted(set(nouns))) if nouns else "（無）")
+    df["句內名詞"] = all_nouns
+    st.dataframe(df)
+    output = io.BytesIO()
+    df.to_excel(output, index=False)
+    st.download_button("📥 下載名詞結果", data=output.getvalue(), file_name="每句名詞結果.xlsx")
