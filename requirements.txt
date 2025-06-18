@@ -5,5 +5,3 @@ fugashi
 ipadic
 pandas
 openpyxl
-
-
