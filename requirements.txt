@@ -1,5 +1,5 @@
 streamlit
 pandas
 openpyxl
-spacy
-ginza          # 先裝 GiNZA wrapper，真正模型由程式內 pip 安裝
+spacy>=3.7
+ginza          # 讓 pip 安裝 GiNZA 套件；模型由程式下載
