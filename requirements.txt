@@ -1,5 +1,9 @@
 streamlit
+transformers
+torch
+fugashi
+ipadic
 pandas
-janome
 openpyxl
+
 
