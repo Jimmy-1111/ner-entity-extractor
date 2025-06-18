@@ -2,4 +2,3 @@ streamlit
 pandas
 openpyxl
 spacy>=3.7
-ginza          # 讓 pip 安裝 GiNZA 套件；模型由程式下載
