@@ -4,13 +4,8 @@ import spacy
 import openpyxl
 import io
 
-# 自動下載日文NER模型（若尚未安裝）
-try:
-    nlp = spacy.load("ja_core_news_sm")
-except OSError:
-    from spacy.cli import download
-    download("ja_core_news_sm")
-    nlp = spacy.load("ja_core_news_sm")
+# 直接 load（不用自動下載）
+nlp = spacy.load("ja_core_news_sm")
 
 st.title("日文 NER 專有名詞抽取工具")
 
